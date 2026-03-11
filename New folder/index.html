@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Best-Fit Trainer Quiz</title>
+  <style>
+    /* =========================================
+       0. DESIGN TOKENS & BASE
+       ========================================= */
+    :root{
+      --bg:#CCB7B3;
+      --text:#5C423D;
+      --card:#FBF7F2;
+      --ink:#5C423D;
+      --muted:#A48780;
+      --primary:#5C423D;
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    }
+    .container{max-width:980px;margin:0 auto;padding:28px 18px 56px}
+    .card{
+      background:var(--card);
+      color:var(--ink);
+      border:none;
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      margin-bottom:16px;
+      opacity:0;
+      transform:translateY(6px);
+      animation:fadeUp .45s ease .05s forwards;
+    }
+    .logo-image{
+      height:36px;
+      width:auto;
+      display:block;
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,.18));
+    }
+    h1,h2,h3{margin:0 0 10px;line-height:1.2}
+    h1{font-size:2rem;font-weight:700;letter-spacing:.2px}
+    h2{font-size:1.35rem;font-weight:650;letter-spacing:.2px}
+    .muted{color:#6d5853}
+    .small{font-size:.85rem}
+    .footer{
+      text-align:center;
+      color:#533c37;
+      font-size:.8rem;
+      margin-top:24px;
+      opacity:.9;
+    }
+    .hidden{display:none}
+
+    /* questions layout */
+    .row{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:640px){ .row.cols-2{grid-template-columns:1fr 1fr} }
+    .option{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px 14px;
+      border:none;
+      border-radius:12px;
+      background:#fff;
+      color:#2b1f1c;
+      box-shadow:0 2px 10px rgba(0,0,0,.06);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .option:hover{
+      transform:translateY(-1px);
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+    }
+    label{cursor:pointer}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:650;
+      letter-spacing:.3px;
+      cursor:pointer;
+    }
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{filter:brightness(1.05)}
+    .btn-ghost{
+      background:var(--card);
+      color:var(--text);
+      border:1px solid var(--muted);
+    }
+    .input{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid var(--muted);
+      background:#fff;
+      color:#2b1f1c;
+    }
+    input[type=radio],input[type=checkbox]{
+      width:22px;
+      height:22px;
+      accent-color:var(--primary);
+    }
+
+    .progress{
+      height:8px;
+      background:rgba(0,0,0,.06);
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      background:var(--primary);
+      width:0%;
+      transition:width .25s ease;
+      border-radius:999px;
+    }
+
+    /* results layout */
+    .results-wrap{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 6px 22px rgba(0,0,0,.08);
+      margin-top:8px;
+    }
+    .results-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:24px;
+    }
+    @media(min-width:880px){
+      .results-grid{grid-template-columns:1fr 1fr;}
+    }
+
+    /* match cards (vertical with centered photo) */
+    .match-card{
+      background:#fff;
+      border-radius:20px;
+      padding:16px;
+      box-shadow:0 6px 22px rgba(0,0,0,.08);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      min-height:260px;
+    }
+    .match-card .photo{
+      width:200px;
+      height:260px;
+      background:#F4EFE9;
+      border-radius:16px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:4px auto 12px;
+    }
+    .match-card .photo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center;
+    }
+    .match-card .name{
+      font-size:1.35rem;
+      font-weight:700;
+      color:var(--ink);
+      letter-spacing:.2px;
+      margin-top:2px;
+    }
+    .match-card .bio{
+      max-width:92%;
+      font-size:.98rem;
+      line-height:1.55;
+      color:#5b4742;
+      margin:6px auto 0;
+    }
+    .match-card .actions{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .match-card .actions a{
+      background:#D9C3B8;
+      color:#000;
+      text-decoration:none;
+      padding:10px 16px;
+      border-radius:10px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+      box-shadow:0 2px 6px rgba(0,0,0,.12);
+      transition:transform .12s ease, background .12s ease;
+    }
+    .match-card .actions a:hover{
+      background:#E6D6CE;
+      transform:translateY(-1px);
+    }
+
+    .intro-block{
+      opacity:0;
+      transform:translateY(8px);
+      animation:fadeUp .5s ease .1s forwards;
+    }
+    @keyframes fadeUp{ to{ opacity:1;transform:none } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand" role="banner">
+      <img class="logo-image" id="brandLogo" src="lifetime.logo.transparent.png" alt="Life Time Logo">
+      <div style="flex:1"></div>
+      <div id="adminControls" class="hidden">
+        <button class="btn btn-ghost" id="openAdmin" type="button">Open Admin</button>
+      </div>
+    </div>
+
+    <div id="app"></div>
+
+    <div class="footer">© 2025 Life Time Burlington</div>
+  </div>
+
+  <script>
+    /* =========================================
+       1. LOGO FALLBACK
+       ========================================= */
+    document.getElementById('brandLogo').addEventListener('error', function(){
+      this.src='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="72"><rect width="100%" height="100%" fill="%23E7DAD6"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="28" fill="%235C423D">LIFE TIME</text></svg>';
+    });
+
+    /* =========================================
+       2. ADMIN LOCK / SHORTCUT
+       ========================================= */
+    var ADMIN_PIN = 'syw9';
+    var ADMIN_OK_KEY = 'quiz_admin_ok';
+
+    function isAdminOk(){
+      try{ return localStorage.getItem(ADMIN_OK_KEY) === 'yes'; }
+      catch(e){ return false; }
+    }
+    function requireAdmin(){
+      if (isAdminOk()) return true;
+      var pin = prompt('Admin PIN:');
+      if (pin === ADMIN_PIN){
+        localStorage.setItem(ADMIN_OK_KEY,'yes');
+        alert('Admin unlocked');
+        return true;
+      }
+      alert('Incorrect PIN.');
+      return false;
+    }
+    function revealAdminButton(){
+      var n = document.getElementById('adminControls');
+      if (isAdminOk() && n) n.classList.remove('hidden');
+    }
+    window.addEventListener('keydown', function(e){
+      if (e.altKey && e.shiftKey && (e.key === 'A' || e.key === 'a')){
+        e.preventDefault();
+        if (requireAdmin()) revealAdminButton();
+      }
+    });
+    // ?admin=syw9
+    try{
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('admin') === ADMIN_PIN){
+        localStorage.setItem(ADMIN_OK_KEY,'yes');
+        revealAdminButton();
+      }
+    }catch(e){}
+
+    /* =========================================
+       3. QUESTIONS (your quiz)
+       ========================================= */
+    var QUESTIONS = [
+      {
+        id:'q1',
+        title:'What Are Your Primary Interests?',
+        helper:'Select all that apply.',
+        type:'multi',
+        options:[
+          {id:'q1_general_health',label:'General health & wellness'},
+          {id:'q1_strength',label:'Strength'},
+          {id:'q1_weight_loss',label:'Weight loss & management'},
+          {id:'q1_mobility_corrective',label:'Mobility & corrective exercise'},
+          {id:'q1_aurora',label:'ARORA'},
+          {id:'q1_nutrition',label:'Nutrition'},
+          {id:'q1_pilates',label:'Pilates'},
+          {id:'q1_sports',label:'Sports'},
+          {id:'q1_assisted_stretch',label:'Assisted stretch'}
+        ]
+      },
+      {
+        id:'q2',
+        title:'Are You Interested in Any of the Following?',
+        helper:'Select all that apply.',
+        type:'multi',
+        options:[
+          {id:'q2_injury_recovery',label:'Injury recovery'},
+          {id:'q2_disability_limited',label:'Disability / limited capacity exercise'},
+          {id:'q2_pre_post_natal',label:'Pre-/Post-natal exercise'}
+        ]
+      },
+      {
+        id:'q3',
+        title:'What Training Style Feels Best for You?',
+        helper:'Choose one.',
+        type:'single',
+        options:[
+          {id:'q3_push',label:'I want a trainer who will challenge me and push me, even when I don’t feel like giving it my all.'},
+          {id:'q3_supportive',label:'I want a trainer who will prioritize my needs and comfort, even if that means moving more slowly than planned.'},
+          {id:'q3_balanced',label:'I want a trainer who will encourage me to work hard, but is flexible and willing to ease off when I need it.'},
+          {id:'q3_open',label:'I have no preference, or I’m unsure which training style I need right now.'}
+        ]
+      },
+      {
+        id:'q4',
+        title:'Do You Prefer to Work with a Specific Gender?',
+        helper:'Choose one.',
+        type:'single',
+        options:[
+          {id:'q4_no_pref',label:'I have no preference'},
+          {id:'q4_female',label:'I would prefer to work with a female trainer'},
+          {id:'q4_male',label:'I would prefer to work with a male trainer'}
+        ]
+      },
+      {
+        id:'q5',
+        title:'Which Day(s) of the Week Are You Available?',
+        helper:'Select all that apply.',
+        type:'multi',
+        options:[
+          {id:'q5_monday',label:'Monday'},
+          {id:'q5_tuesday',label:'Tuesday'},
+          {id:'q5_wednesday',label:'Wednesday'},
+          {id:'q5_thursday',label:'Thursday'},
+          {id:'q5_friday',label:'Friday'},
+          {id:'q5_saturday',label:'Saturday'},
+          {id:'q5_sunday',label:'Sunday'}
+        ]
+      },
+      {
+        id:'q6',
+        title:'What Time(s) of the Day Are You Available?',
+        helper:'Select all that apply.',
+        type:'multi',
+        options:[
+          {id:'q6_early_morning',label:'Early morning (4–8 am)'},
+          {id:'q6_morning',label:'Morning (8–12 pm)'},
+          {id:'q6_afternoon',label:'Afternoon (12–5 pm)'},
+          {id:'q6_evening',label:'Evening (5–8 pm)'}
+        ]
+      },
+      {
+        id:'q7',
+        title:'Which of the Following Statements Best Aligns with Your Current Budget?',
+        helper:'Choose one.',
+        type:'single',
+        options:[
+          {id:'q7_no_budget_constraints',label:'I want to be paired wth my best match regardless of cost'},
+          {id:'q7_some_flex',label:'I have some budget limitations, but I can be flexible'},
+          {id:'q7_strict_budget',label:'I have strict budgetary restrictions'}
+        ]
+      }
+    ];
+
+    /* =========================================
+       4. GLOBAL STATE & HELPERS
+       ========================================= */
+    var app = document.getElementById('app');
+
+    // quiz state
+    var step = 0;
+    var answers = new Map();
+    var lastScores = null;
+    var lastSelectedCount = 0;
+    var userName = '';
+
+    // trainers + config
+    var TRAINERS = [];
+    var CFG_KEY = 'quiz_google_form_cfg';
+    var REMOTE_CFG = null;
+
+    // defaults now include Day(s), Time(s), and Personality
+    var DEFAULT_CFG = {
+      formAction:'',
+      entryTop:'',
+      entrySecond:'',
+      entryGoals:'',
+      entrySecondaryGoals:'',
+      entryPersonality:'',
+      entryGender:'',
+      entryName:'',
+      entryDays:'',
+      entryTimes:''
+    };
+
+    // tiny DOM helper
+    function el(tag, attrs){
+      var node = document.createElement(tag);
+      attrs = attrs || {};
+      for (var k in attrs){
+        if (k === 'class') node.className = attrs[k];
+        else if (k === 'style') node.setAttribute('style', attrs[k]);
+        else if (k === 'onclick') node.onclick = attrs[k];
+        else node.setAttribute(k, attrs[k]);
+      }
+      for (var i=2;i<arguments.length;i++){
+        var c = arguments[i];
+        if (c == null) continue;
+        node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      }
+      return node;
+    }
+
+    /* =========================================
+       5. CONFIG LOAD / SAVE
+       ========================================= */
+    function getLocalCfg(){
+      try{
+        return JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+      }catch(e){
+        return {};
+      }
+    }
+    function getCfg(){
+      var out = {};
+      var layers = [DEFAULT_CFG, REMOTE_CFG || {}, getLocalCfg()];
+      layers.forEach(function(layer){
+        for (var k in layer){
+          out[k] = layer[k];
+        }
+      });
+      return out;
+    }
+    function setCfg(newCfg){
+      var cur = getCfg();
+      for (var k in newCfg){
+        cur[k] = newCfg[k];
+      }
+      localStorage.setItem(CFG_KEY, JSON.stringify(cur));
+      alert('Saved.');
+    }
+    function bootConfig(){
+      // try to fetch config.json but don't die if it 404s
+      fetch('config.json',{cache:'no-store'})
+        .then(function(r){ if (r.ok) return r.json(); })
+        .then(function(js){
+          if (!js) return;
+          REMOTE_CFG = js;
+          var merged = {};
+          for (var k in DEFAULT_CFG) merged[k] = DEFAULT_CFG[k];
+          for (var k2 in REMOTE_CFG) merged[k2] = REMOTE_CFG[k2];
+          localStorage.setItem(CFG_KEY, JSON.stringify(merged));
+        })
+        .catch(function(){ /* ignore */ });
+    }
+
+    /* =========================================
+       6. TRAINERS LOAD / CSV IMPORT
+       ========================================= */
+    function bootTrainers(){
+      fetch('trainers.json',{cache:'no-store'})
+        .then(function(r){
+          if (r.ok) return r.json();
+          throw new Error('no json');
+        })
+        .then(function(js){
+          TRAINERS = js;
+          render();
+        })
+        .catch(function(){
+          // fallback to localStorage
+          try{
+            var raw = localStorage.getItem('trainers_json');
+            if (raw){
+              TRAINERS = JSON.parse(raw);
+              render();
+              return;
+            }
+          }catch(e){}
+          // final fallback sample
+          TRAINERS = [
+            { name:'Sample Trainer', bio:'(example only)', mapping:{ q1_strength:'yes', q4_no_pref:'yes' } }
+          ];
+          render();
+        });
+    }
+
+    function parseCSV(text){
+      var rows = [], i=0, cur='', inQ=false, row=[];
+      function push(){ row.push(cur); cur=''; }
+      for (; i<text.length; i++){
+        var c=text[i], n=text[i+1];
+        if (inQ){
+          if (c === '"' && n === '"'){ cur+='"'; i++; }
+          else if (c === '"'){ inQ = false; }
+          else { cur += c; }
+        } else {
+          if (c === '"'){ inQ = true; }
+          else if (c === ','){ push(); }
+          else if (c === '\n'){ push(); rows.push(row); row=[]; }
+          else if (c === '\r'){ /* ignore */ }
+          else { cur += c; }
+        }
+      }
+      push();
+      if (row.length) rows.push(row);
+      var headers = rows.shift().map(function(h){ return h.trim();});
+      return rows
+        .filter(function(r){ return r.some(function(x){ return String(x||'').trim() !== ''; }); })
+        .map(function(r){
+          var o={};
+          headers.forEach(function(h,idx){ o[h] = r[idx] || ''; });
+          return o;
+        });
+    }
+
+    function normalizeUrl(u){
+      if (!u) return '';
+      var s = String(u).trim();
+      if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s)) return '';
+      if (/^(www\.)/i.test(s)) s = 'https://' + s;
+      if (!/^https?:\/\//i.test(s) && /\./.test(s)) s = 'https://' + s;
+      return s;
+    }
+
+    function handleImportCsv(e){
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(){
+        try{
+          var rows = parseCSV(String(reader.result));
+          var trainers = rows.map(function(raw){
+            var name = raw.name || raw.Name || raw['Trainer Name'] || '';
+            var bio  = raw.bio || raw.Bio || raw.About || '';
+            var email = (raw.email || raw.Email || '').toString().trim();
+            var bookingCandidate = raw.bookingUrl || raw.Booking || raw['Booking URL'] || raw.Calendly || raw.Schedule || '';
+            var bookingUrl = normalizeUrl(bookingCandidate);
+            var photoUrl = raw.photoUrl || raw.Photo || raw.Image || '';
+            var mapping = {};
+            for (var k in raw){
+              mapping[k] = String(raw[k]).toLowerCase();
+            }
+            return {
+              name:name,
+              bio:bio,
+              email:email,
+              bookingUrl:bookingUrl,
+              contactUrl:(email ? ('mailto:'+email) : ''),
+              photoUrl:photoUrl,
+              mapping:mapping
+            };
+          });
+          window.TRAINERS = trainers;
+          try{ localStorage.setItem('trainers_json', JSON.stringify(trainers)); }catch(err){}
+          alert('Loaded ' + trainers.length + ' trainers from CSV.');
+          render();
+        }catch(err){
+          alert('CSV import failed: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* =========================================
+       7. GOOGLE FORM LOGGING (SAFE)
+       ========================================= */
+    function logToGoogle(payload){
+      var cfg = getCfg ? getCfg() : null;
+      if (!cfg || !cfg.formAction){
+        // no config? just don't log
+        return;
+      }
+      try{
+        var data = new URLSearchParams();
+
+        // name
+        if (cfg.entryName && payload.userName){
+          data.append(cfg.entryName, payload.userName || '');
+        }
+        // top
+        if (cfg.entryTop && payload.top){
+          data.append(cfg.entryTop, payload.top || '');
+        }
+        // second
+        if (cfg.entrySecond && payload.second){
+          data.append(cfg.entrySecond, payload.second || '');
+        }
+        // q1 goals
+        if (cfg.entryGoals){
+          data.append(cfg.entryGoals, payload.goals || '');
+        }
+        // q2 goals
+        if (cfg.entrySecondaryGoals){
+          data.append(cfg.entrySecondaryGoals, payload.secondaryGoals || '');
+  	}
+        // personality / coaching style
+        if (cfg.entryPersonality){
+          data.append(cfg.entryPersonality, payload.personality || '');
+        }
+        // gender
+        if (cfg.entryGender){
+          data.append(cfg.entryGender, payload.gender || '');
+        }
+        // Day(s) – Q5
+        if (cfg.entryDays){
+          data.append(cfg.entryDays, payload.days || '');
+        }
+        // Time(s) – Q6
+        if (cfg.entryTimes){
+          data.append(cfg.entryTimes, payload.times || '');
+        }
+
+        fetch(cfg.formAction, {
+          method:'POST',
+          mode:'no-cors',
+          body:data
+        });
+      }catch(err){
+        console.warn('Google Form logging failed:', err);
+      }
+    }
+
+    /* =========================================
+       8. RENDERING (INTRO → QUESTIONS → RESULTS)
+       ========================================= */
+    function render(){
+      app.innerHTML = '';
+      if (step === 0){
+        renderIntro();
+        return;
+      }
+      if (step >= 1 && step <= QUESTIONS.length){
+        renderQuestion(step - 1);
+        return;
+      }
+      if (Array.isArray(lastScores)){
+        renderResults(lastScores, lastSelectedCount);
+        return;
+      }
+      // fallback
+      step = 0;
+      renderIntro();
+    }
+
+    function renderIntro(){
+      var nameInput = el('input',{
+        class:'input',
+        id:'userNameInput',
+        placeholder:"What's your name?"
+      });
+
+      var intro = el('div',{class:'card intro-block'},
+        el('h1',{},'Find Your Best-Fit Trainer'),
+        el('p',{class:'muted'},'Ready to kick-start your fitness journey? Answer 7 quick questions and connect with a trainer who will help you achieve your goals!'),
+        el('div',{}, nameInput),
+        el('div',{class:'controls',style:'margin-top:10px'},
+          el('button',{
+            class:'btn btn-primary',
+            type:'button',
+            onclick:function(){
+              var v = document.getElementById('userNameInput').value.trim();
+              if (!v){
+                alert('Please enter your name to personalize your results.');
+                return;
+              }
+              userName = v;
+              step = 1;
+              render();
+            }
+          },'Start Quiz')
+        )
+      );
+      app.appendChild(intro);
+    }
+
+    function renderProgress(){
+      var pct = ((step / QUESTIONS.length) * 100).toFixed(0);
+      return el('div',{class:'progress'},
+        el('div',{class:'bar',style:'width:'+pct+'%'})
+      );
+    }
+
+    function renderQuestion(idx){
+      var q = QUESTIONS[idx];
+
+      app.appendChild(
+        el('div',{class:'card'},
+          // top bar
+          el('div',{style:'margin-bottom:10px'},
+            el('div',{class:'muted',style:'display:flex;justify-content:space-between'},
+              el('span',{},'Question '+step+' of '+QUESTIONS.length),
+              el('span',{}, String(selectionCount())+' selections')
+            ),
+            renderProgress()
+          ),
+          // title
+          el('h2',{},q.title),
+          // helper
+          el('p',{class:'muted'},q.helper),
+          // options
+          renderOptions(q),
+          // buttons
+          el('div',{class:'controls',style:'margin-top:14px;justify-content:space-between'},
+            el('button',{
+              class:'btn btn-ghost',
+              type:'button',
+              onclick:function(){
+                if (step > 1){
+                  step--;
+                  render();
+                } else {
+                  // go back to intro
+                  step = 0;
+                  render();
+                }
+              }
+            },'Back'),
+            el('div',{class:'controls'},
+              el('button',{
+                class:'btn btn-primary',
+                type:'button',
+                onclick:function(){
+                  continueFrom(q);
+                }
+              }, (step < QUESTIONS.length ? 'Continue' : 'See My Matches'))
+            )
+          )
+        )
+      );
+    }
+
+    function renderOptions(q){
+      var wrap = el('div',{class:'row cols-2'});
+      var currentVal = answers.get(q.id);
+
+      q.options.forEach(function(opt){
+        var domId = q.id + '__' + opt.id;
+        var checked = false;
+
+        if (q.type === 'multi'){
+          checked = Boolean(currentVal && currentVal.has && currentVal.has(opt.id));
+        } else {
+          checked = (currentVal === opt.id);
+        }
+
+        var input = el('input',{
+          id:domId,
+          type:(q.type === 'multi' ? 'checkbox' : 'radio'),
+          name:q.id
+        });
+        if (checked) input.checked = true;
+
+        input.addEventListener('change', function(){
+          onSelect(q.id, opt.id, q.type);
+        });
+
+        wrap.appendChild(
+          el('label',{for:domId, class:'option'},
+            input,
+            el('span',{}, opt.label)
+          )
+        );
+      });
+
+      return wrap;
+    }
+
+    function onSelect(qid, optionId, type){
+      if (type === 'multi'){
+        var set = answers.get(qid) || new Set();
+        if (set.has(optionId)) set.delete(optionId);
+        else set.add(optionId);
+        answers.set(qid, set);
+      } else {
+        answers.set(qid, optionId);
+      }
+      render();
+    }
+
+    function selectionCount(){
+      var n = 0;
+      QUESTIONS.forEach(function(q){
+        var v = answers.get(q.id);
+        if (!v) return;
+        if (q.type === 'multi'){
+          n += v.size;
+        } else {
+          n += 1;
+        }
+      });
+      return n;
+    }
+
+    function continueFrom(q){
+      // for single-choice questions, force a choice
+      if (q.type === 'single' && !answers.get(q.id)){
+        alert('Please choose one option to continue.');
+        return;
+      }
+      if (step < QUESTIONS.length){
+        step++;
+        render();
+      } else {
+        // final step
+        finish();
+      }
+    }
+
+    /* =========================================
+       9. FINISH = SCORE + LOG + SHOW
+       ========================================= */
+    function finish(){
+      // collect all selected IDs
+      var selected = new Set();
+      QUESTIONS.forEach(function(q){
+        var v = answers.get(q.id);
+        if (!v) return;
+        if (q.type === 'multi'){
+          v.forEach(function(id){ selected.add(id); });
+        } else {
+          selected.add(v);
+        }
+      });
+
+      // start with all trainers
+      var candidates = TRAINERS ? TRAINERS.slice() : [];
+
+      // gender filter (Q4)
+      var genderAnswer = answers.get('q4');
+      if (genderAnswer === 'q4_female'){
+        candidates = candidates.filter(function(t){
+          return String((t.mapping || {}).q4_female || '').toLowerCase() === 'yes';
+        });
+      } else if (genderAnswer === 'q4_male'){
+        candidates = candidates.filter(function(t){
+          return String((t.mapping || {}).q4_male || '').toLowerCase() === 'yes';
+        });
+      }
+
+      // score trainers (with weights)
+      var ranked = score(candidates, selected);
+      lastScores = ranked.slice(0, 2);
+      lastSelectedCount = selected.size;
+
+      // build ID -> label map
+      var id2label = new Map();
+      QUESTIONS.forEach(function(q){
+        q.options.forEach(function(o){
+          id2label.set(o.id, o.label);
+        });
+      });
+
+      // Q1 goals
+      var q1Set = answers.get('q1') || new Set();
+      var goals = Array.from(q1Set).map(function(id){
+        return id2label.get(id) || id;
+      }).join(', ');
+
+      // Q2 secondary
+      var q2Set = answers.get('q2') || new Set();
+      var secondaryGoals = Array.from(q2Set).map(function(id){
+        return id2label.get(id) || id;
+      }).join(', ');
+
+      // gender (Q4)
+      var genderId = answers.get('q4') || '';
+      var gender = genderId ? (id2label.get(genderId) || genderId) : '';
+
+      // Personality / style (Q3)
+      var personalityId = answers.get('q3') || '';
+      var personality = personalityId ? (id2label.get(personalityId) || personalityId) : '';
+
+      // Day(s) – Q5
+      var q5Set = answers.get('q5') || new Set();
+      var daysLabels = Array.from(q5Set).map(function(id){
+        return id2label.get(id) || id;
+      }).join(', ');
+
+      // Time(s) – Q6
+      var q6Set = answers.get('q6') || new Set();
+      var timesLabels = Array.from(q6Set).map(function(id){
+        var label = id2label.get(id) || id;
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      }).join(', ');
+
+      // top & second
+      var top    = (ranked[0] && ranked[0].trainer && ranked[0].trainer.name) || '';
+      var second = (ranked[1] && ranked[1].trainer && ranked[1].trainer.name) || '';
+
+      // try to log, but DO NOT block UI
+      try{
+        logToGoogle({
+          userName:userName,
+          top:top,
+          second:second,
+          goals:goals,
+          secondaryGoals:secondaryGoals,
+          gender:gender,
+          days:daysLabels,
+          times:timesLabels,
+          personality:personality
+        });
+      }catch(e){
+        console.warn('logToGoogle error:', e);
+      }
+
+      // show results no matter what
+      step = QUESTIONS.length + 1;
+      render();
+    }
+
+    /* =========================================
+       10. SCORE HELPER (weighted, with q3_* styles)
+       ========================================= */
+    function score(trainers, selected){
+      // Training style IDs (ignore "open" for weighting)
+      var STYLE_IDS = new Set([
+        'q3_push',
+        'q3_supportive',
+        'q3_balanced'
+      ]);
+
+      // Find which personality style the user chose (if any)
+      var personalityId = null;
+      selected.forEach(function(id){
+        if (STYLE_IDS.has(id)){
+          personalityId = id;
+        }
+      });
+
+      function baseWeight(id){
+        // personality handled separately; "open" is neutral
+        if (STYLE_IDS.has(id) || id === 'q3_open') return 0;
+
+        if (id.indexOf('q1_') === 0) return 2; // primary goals
+        if (id.indexOf('q2_') === 0) return 3; // special populations
+        if (id.indexOf('q5_') === 0) return 1; // days
+        if (id.indexOf('q6_') === 0) return 1; // times
+        if (id.indexOf('q7_') === 0) return 2; // budget
+
+        return 1; // fallback
+      }
+
+      return trainers
+        .map(function(t){
+          var s = 0;
+
+          // 1) weighted scoring for all non-style selections
+          selected.forEach(function(id){
+            var w = baseWeight(id);
+            if (!w) return;
+
+            if (t.mapping && t.mapping[id] &&
+                String(t.mapping[id]).trim().toLowerCase() === 'yes'){
+              s += w;
+            }
+          });
+
+          // 2) personality style bonus
+          if (personalityId &&
+              t.mapping &&
+              String(t.mapping[personalityId] || '').trim().toLowerCase() === 'yes'){
+            s += 3; // style match = +3
+          }
+
+          return { trainer:t, score:s };
+        })
+        .sort(function(a,b){ return b.score - a.score; });
+    }
+
+    /* =========================================
+       11. RESULTS RENDER
+       ========================================= */
+    function renderResults(scores, selectedCount){
+      app.innerHTML = '';
+
+      var header = el('div',{class:'card'},
+        el('h2',{}, userName ? ('Your Top Matches, '+userName+'!') : 'Your Top Matches'),
+        el('p',{class:'muted'}, 'Based on '+selectedCount+' of your selections.')
+      );
+
+      var grid = el('div',{class:'results-grid'});
+      scores.forEach(function(item, i){
+        grid.appendChild( renderMatchCard(item, i+1) );
+      });
+
+      var wrap = el('div',{class:'results-wrap'}, grid);
+
+      app.appendChild(header);
+      app.appendChild(wrap);
+
+      app.appendChild(
+        el('div',{class:'card',style:'margin-top:12px'},
+          el('div',{class:'controls',style:'justify-content:center'},
+            el('button',{
+              class:'btn btn-primary',
+              type:'button',
+              onclick:function(){
+                step = 0;
+                answers.clear();
+                lastScores = null;
+                userName = '';
+                render();
+              }
+            },'Restart')
+          )
+        )
+      );
+    }
+
+    function renderMatchCard(item, rank){
+      var t = item.trainer || {};
+      var photo = el('div',{class:'photo'},
+        t.photoUrl
+          ? el('img',{src:t.photoUrl,alt:'Photo of '+(t.name || 'trainer')})
+          : el('div',{class:'muted'},'PHOTO')
+      );
+      var name = el('div',{class:'name'}, t.name || 'Trainer');
+      var bio  = el('div',{class:'bio'}, t.bio || ' ');
+
+      var actions = el('div',{class:'actions'},
+        t.email ? el('a',{href:'mailto:'+t.email},'Email') : null,
+        t.bookingUrl ? el('a',{href:t.bookingUrl,target:'_blank',rel:'noopener'},'Book Here') : null
+      );
+
+      return el('div',{class:'match-card'},
+        photo,
+        name,
+        bio,
+        actions
+      );
+    }
+
+    /* =========================================
+       12. ADMIN UI
+       ========================================= */
+    document.getElementById('openAdmin').addEventListener('click', function(){
+      if (!requireAdmin()) return;
+      showAdmin();
+    });
+
+    function showAdmin(){
+      var cfg = getCfg();
+      app.innerHTML = '';
+
+      var adminCard = el('div',{class:'card'},
+        el('h2',{},'Admin'),
+        el('p',{class:'small muted'},'Paste Google Form pieces and (optionally) manage trainers.'),
+
+        // analytics setup
+        el('h3',{},'Analytics Setup'),
+        el('div',{class:'small muted'},'Form action URL (must end with /formResponse)'),
+        el('input',{class:'input',id:'formAction',placeholder:'https://docs.google.com/forms/d/e/.../formResponse',value:cfg.formAction||''}),
+        el('div',{style:'height:10px'}),
+        el('div',{class:'small muted'},'Field IDs (from your Form’s inputs: name="entry.xxxxx")'),
+        el('input',{class:'input',id:'entryName',placeholder:'entry.########  (User Name)',value:cfg.entryName||''}),
+        el('div',{style:'height:6px'}),
+        el('input',{class:'input',id:'entryTop',placeholder:'entry.########  (Top Match Trainer)',value:cfg.entryTop||''}),
+        el('div',{style:'height:6px'}),
+        el('input',{class:'input',id:'entrySecond',placeholder:'entry.########  (Second Match Trainer)',value:cfg.entrySecond||''}),
+        el('div',{style:'height:6px'}),
+        el('input',{class:'input',id:'entryGoals',placeholder:'entry.########  (Goals – Q1)',value:cfg.entryGoals||''}),
+        el('div',{style:'height:6px'}),
+        el('input',{class:'input',id:'entrySecondaryGoals',placeholder:'entry.########  (Secondary goals – Q2)',value:cfg.entrySecondaryGoals||''}),
+        el('div',{style:'height:6px'}),
+
+        // Gender & Personality
+        el('input',{class:'input',id:'entryPersonality',placeholder:'entry.########  (Coaching style – Q3)',value:cfg.entryPersonality||''}),
+        el('div',{style:'height:6px'}),
+	el('input',{class:'input',id:'entryGender',placeholder:'entry.########  (Gender preference – Q4)',value:cfg.entryGender||''}),
+        el('div',{style:'height:6px'}),
+   
+        // Day(s) & Time(s)
+        el('input',{class:'input',id:'entryDays',placeholder:'entry.########  (Day(s) – Q5)',value:cfg.entryDays||''}),
+        el('div',{style:'height:6px'}),
+        el('input',{class:'input',id:'entryTimes',placeholder:'entry.########  (Time(s) – Q6)',value:cfg.entryTimes||''}),
+        el('div',{style:'height:6px'}),
+
+        el('div',{class:'controls'},
+          el('button',{
+            class:'btn btn-primary',
+            type:'button',
+            onclick:function(){
+              setCfg({
+                formAction:document.getElementById('formAction').value.trim(),
+                entryName:document.getElementById('entryName').value.trim(),
+                entryTop:document.getElementById('entryTop').value.trim(),
+                entrySecond:document.getElementById('entrySecond').value.trim(),
+                entryGoals:document.getElementById('entryGoals').value.trim(),
+                entrySecondaryGoals:document.getElementById('entrySecondaryGoals').value.trim(),
+		entryPersonality:document.getElementById('entryPersonality').value.trim(),
+                entryGender:document.getElementById('entryGender').value.trim(),
+                entryDays:document.getElementById('entryDays').value.trim(),
+                entryTimes:document.getElementById('entryTimes').value.trim()
+              });
+            }
+          },'Save'),
+          el('button',{
+            class:'btn btn-ghost',
+            type:'button',
+            onclick:function(){
+              render();
+            }
+          },'Close')
+        ),
+
+        el('div',{style:'height:20px'}),
+        el('h3',{},'Trainers (optional)'),
+        el('p',{},'Manage trainer data. Import CSV from Google Sheets, or paste/export JSON.'),
+        el('div',{class:'controls',id:'trainerControls'},
+          el('button',{class:'btn btn-ghost',type:'button',onclick:function(){ exportJson(); }},'Export JSON'),
+          el('button',{class:'btn btn-ghost',type:'button',onclick:function(){ pasteJson(); }},'Paste JSON'),
+          el('input',{id:'importCsvInput',type:'file',accept:'.csv,text/csv',class:'hidden'}),
+          el('button',{
+            class:'btn btn-ghost',
+            type:'button',
+            onclick:function(){
+              document.getElementById('importCsvInput').click();
+            }
+          },'Import CSV')
+        ),
+
+        el('div',{style:'height:20px'}),
+        el('h3',{},'Profile Preview'),
+        el('p',{class:'small muted'},'Choose a trainer to see their end-user card, or preview two at once.'),
+        (function(){
+          var row = el('div',{class:'controls',style:'justify-content:flex-start'});
+          var sel = el('select',{class:'input',style:'max-width:320px'});
+          TRAINERS.forEach(function(t,i){
+            var o = document.createElement('option');
+            o.value = String(i);
+            o.textContent = t.name || ('Trainer '+(i+1));
+            sel.appendChild(o);
+          });
+          sel.addEventListener('change', function(){ showSinglePreview(sel.value); });
+          row.appendChild(sel);
+          row.appendChild(el('button',{class:'btn btn-primary',type:'button',onclick:function(){ showSinglePreview(sel.value); }},'Show Profile'));
+          row.appendChild(el('button',{class:'btn btn-primary',type:'button',onclick:function(){ showTwoPreview(sel.value); }},'Show 2 Profiles'));
+          return row;
+        })(),
+        el('div',{id:'profilePreviewMount',style:'margin-top:12px'})
+      );
+
+      app.appendChild(adminCard);
+
+      var csvInput = document.getElementById('importCsvInput');
+      if (csvInput) csvInput.addEventListener('change', handleImportCsv);
+    }
+
+    function exportJson(){
+      var blob = new Blob([JSON.stringify(TRAINERS,null,2)], {type:'application/json'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'trainers.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function pasteJson(){
+      var txt = prompt('Paste trainers JSON (array). This will REPLACE current trainers.');
+      if (!txt) return;
+      try{
+        TRAINERS = JSON.parse(txt);
+        localStorage.setItem('trainers_json', JSON.stringify(TRAINERS));
+        alert('Loaded '+TRAINERS.length+' trainers.');
+        render();
+      }catch(e){
+        alert('Invalid JSON: '+e.message);
+      }
+    }
+
+    function showSinglePreview(idx){
+      var mount = document.getElementById('profilePreviewMount');
+      mount.innerHTML = '';
+      var t = TRAINERS[Number(idx)];
+      if (!t){
+        mount.appendChild(el('div',{},'Select a trainer to preview.'));
+        return;
+      }
+      mount.appendChild(
+        el('div',{class:'card'},
+          el('h3',{},'Profile Preview'),
+          renderMatchCard({trainer:t,score:0},1)
+        )
+      );
+    }
+
+    function showTwoPreview(idx){
+      var mount = document.getElementById('profilePreviewMount');
+      mount.innerHTML = '';
+      var start = Number(idx);
+      var selected = TRAINERS.slice(start, start+2);
+      if (!selected.length){
+        mount.appendChild(el('div',{},'No trainers to preview.'));
+        return;
+      }
+      var grid = el('div',{class:'results-grid'});
+      selected.forEach(function(t){
+        grid.appendChild( renderMatchCard({trainer:t},1) );
+      });
+      mount.appendChild(grid);
+    }
+
+    /* =========================================
+       13. BOOT
+       ========================================= */
+    render();
+    bootConfig();
+    bootTrainers();
+  </script>
+</body>
+</html>
